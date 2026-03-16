@@ -5,6 +5,8 @@ A super simple FastAPI application that allows students to view and sign up
 for extracurricular activities at Mergington High School.
 """
 
+import email
+
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
@@ -38,9 +40,47 @@ activities = {
         "schedule": "Mondays, Wednesdays, Fridays, 2:00 PM - 3:00 PM",
         "max_participants": 30,
         "participants": ["john@mergington.edu", "olivia@mergington.edu"]
+    },
+    # Sports related activities
+    "Soccer Team": {
+        "description": "Join the school soccer team and compete in matches",
+        "schedule": "Tuesdays and Thursdays, 4:00 PM - 5:30 PM",
+        "max_participants": 18,
+        "participants": ["alex@mergington.edu", "lucas@mergington.edu"]
+    },
+    "Basketball Club": {
+        "description": "Practice basketball skills and play friendly games",
+        "schedule": "Wednesdays, 3:30 PM - 5:00 PM",
+        "max_participants": 15,
+        "participants": ["mia@mergington.edu", "noah@mergington.edu"]
+    },
+    # Artistic activities
+    "Drama Club": {
+        "description": "Act, direct, and participate in school plays",
+        "schedule": "Mondays, 4:00 PM - 5:30 PM",
+        "max_participants": 25,
+        "participants": ["ava@mergington.edu", "liam@mergington.edu"]
+    },
+    "Art Workshop": {
+        "description": "Explore painting, drawing, and sculpture",
+        "schedule": "Fridays, 2:00 PM - 3:30 PM",
+        "max_participants": 20,
+        "participants": ["isabella@mergington.edu", "elijah@mergington.edu"]
+    },
+    # Intellectual activities
+    "Math Club": {
+        "description": "Solve challenging math problems and prepare for competitions",
+        "schedule": "Thursdays, 3:30 PM - 4:30 PM",
+        "max_participants": 15,
+        "participants": ["charlotte@mergington.edu", "benjamin@mergington.edu"]
+    },
+    "Science Club": {
+        "description": "Conduct experiments and explore scientific concepts",
+        "schedule": "Wednesdays, 4:00 PM - 5:00 PM",
+        "max_participants": 20,
+        "participants": ["amelia@mergington.edu", "jack@mergington.edu"]
     }
 }
-
 
 @app.get("/")
 def root():
@@ -61,7 +101,25 @@ def signup_for_activity(activity_name: str, email: str):
 
     # Get the specific activity
     activity = activities[activity_name]
-
+   
+    # Validate student is not already signed up    
+    if email in activity["participants"]:
+        raise HTTPException(status_code=400, detail="Student is already signed up for this activity")
     # Add student
     activity["participants"].append(email)
     return {"message": f"Signed up {email} for {activity_name}"}
+
+
+# New endpoint to remove a participant from an activity
+from fastapi import Query
+
+@app.delete("/activities/{activity_name}/participant")
+def remove_participant(activity_name: str, email: str = Query(...)):
+    """Remove a student from an activity"""
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    activity = activities[activity_name]
+    if email not in activity["participants"]:
+        raise HTTPException(status_code=404, detail="Participant not found in this activity")
+    activity["participants"].remove(email)
+    return {"message": f"Removed {email} from {activity_name}"}
